@@ -42,7 +42,7 @@ mean(d1$ADOS)
 flist = alist(
   ADOS ~ dnorm(mu, sigma), # ADOS is the ASD severity, what we are interested in
   mu ~ dnorm(14,3), # 14 is the mean, a SD of 4 allows 3 sd's on each side of the mean within the data
-  sigma ~ dunif(0,21)) # 0 is the least possible error possible, and 21 is the biggest possible
+  sigma ~ dunif(0,21)) # 0 is the least possible error, and 21 is the biggest possible error of ADOS
 
 # fitting the model to the data
 m1 = map(flist, data = d1)
@@ -51,7 +51,7 @@ m1 = map(flist, data = d1)
 precis(m1)
 
 
-# model for verbal IQ and ADOS
+# 1.1 model for verbal IQ and ADOS
 m2= map(
       alist(
           ADOS ~ dnorm(mu, sigma), 
@@ -68,10 +68,10 @@ precis(m2, corr=T)
 post <- extract.samples( m2 , n=1e4 )
 VerbalIQ.seq <- seq( from=8 , to=33 , by=1 )
 
-sim.ADOS = sim(m2, data =list(VerbalIQ = VerbalIQ.seq))
-ADOS.PI = apply(sim.ADOS,2,PI, prob =0.89)
+sim.ADOS = sim(m2, data =list(VerbalIQ = VerbalIQ.seq)) # simulating data for verbal IQ
+ADOS.PI = apply(sim.ADOS,2,PI, prob =0.89) # making percentile intervals
 
-
+# plotting raw data
 plot( ADOS ~ VerbalIQ , data=d1 , col=col.alpha(rangi2,0.5) )
 # plot the MAP line, aka the mean mu for each weight
 abline(m2)
@@ -80,24 +80,24 @@ for ( i in 1:20 )
   abline( a=post$a[i] , b=post$b[i] , col=col.alpha("black",0.3) )
 shade( ADOS.PI , VerbalIQ.seq )
 
-#more overestimating than underestimating
+# The plot is more overestimating than underestimating, as all of the points above the lines are withing the 89% interval, but not all of the dots below are within the shade
 
-# model for non-verbal IQ and ADOS
+# 1.2 model for non-verbal IQ and ADOS
 m3= map(
       alist(
           ADOS ~ dnorm(mu, sigma), 
                 mu <- a + b*NonVerbalIQ, 
                 a ~ dnorm(14,3), 
-                b ~ dnorm(0,25), 
+                b ~ dnorm(0,29), 
                 sigma ~ dunif(0,21)
           ), 
           data = d1)
 
-precis(m3, corr=T)
+precis(m3)
 
 #sampling from the posterior
 post <- extract.samples( m3 , n=1e4 )
-NonVerbalIQ.seq <- seq( from=8 , to=33 , by=1 )
+NonVerbalIQ.seq <- seq( from=13 , to=42 , by=1 )
 
 sim.ADOS = sim(m3, data =list(NonVerbalIQ = NonVerbalIQ.seq))
 ADOS.PI = apply(sim.ADOS,2,PI, prob =0.89)
@@ -111,13 +111,13 @@ for ( i in 1:20 )
   abline( a=post$a[i] , b=post$b[i] , col=col.alpha("black",0.3) )
 shade( ADOS.PI , NonVerbalIQ.seq )
 
-# model for social IQ and ADOS
+# 1.3 model for social IQ and ADOS
 m4= map(
       alist(
           ADOS ~ dnorm(mu, sigma), 
                 mu <- a + b*SocialIQ, 
                 a ~ dnorm(14,3), 
-                b ~ dnorm(0,25), 
+                b ~ dnorm(0,44), 
                 sigma ~ dunif(0,21)
           ), 
           data = d1)
@@ -126,7 +126,7 @@ precis(m4, corr=T)
 
 #sampling from the posterior
 post <- extract.samples( m4 , n=1e4 )
-SocialIQ.seq <- seq( from=8 , to=33 , by=1 )
+SocialIQ.seq <- seq( from=61 , to=105 , by=1 )
 
 sim.ADOS = sim(m4, data =list(SocialIQ = SocialIQ.seq))
 ADOS.PI = apply(sim.ADOS,2,PI, prob =0.89)
