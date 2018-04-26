@@ -171,12 +171,12 @@ pred.data = data.frame(
   SocialIQ = S.avg
 )
 
-#compute counterfactual mean divorce (mu)
+#compute counterfactual mean  (mu)
 mu = link(m5, data = pred.data)
 mu.mean = apply(mu, 2, mean)
 mu.PI = apply(mu, 2, PI)
 
-#simulate counterfactual divorce outcomes
+#simulate counterfactual outcomes
 V.sim = sim(m5, data = pred.data, n=1e4)
 V.PI = apply(V.sim, 2, PI)
 
@@ -240,10 +240,124 @@ mtext("NonVerbalIQ + VerbalIQ = 0")
 lines(S.seq, mu.mean)
 shade(mu.PI, S.seq)
 shade(S.PI, S.seq)
+
+#dens plot simulated data from model on raw data
+sim.m5 = sim(m5, data = d1, n=1e4)
+dens(sim.m5, col = "red", xlim = c(-5, 30), ylim = c(0,0.12),  xlab = "ADOS")
+par(new=TRUE)
+dens(d1$ADOS, xlim = c(-5, 30), ylim = c(0,0.12), xlab = "ADOS")
+title("Model 5")
 ```
 
 3. Let's now include also the TD children. Does it make sense to ask whether IQ and ADOS are related? Motivate your answer. In any case, if you wanted to build a model to answer that question, which model would you build? Run the model, assess its quality, write a few lines interpreting the results.
 ```{r}
+# subsetting all 1st visit
+d2=subset(data, Visit == 1)
+d2=d2[complete.cases(d2),]
+# fitting 
+m6= map(
+      alist(
+          ADOS ~ dnorm(mu, sigma), 
+                mu <- a + bv*VerbalIQ + bn*NonVerbalIQ + bs*SocialIQ, 
+                a ~ dnorm(7,3), 
+                bv ~ dnorm(0,25),
+                bn ~ dnorm(0,29),
+                bs ~ dnorm(0,54),
+                sigma ~ dunif(0,21)
+          ), 
+          data = d2)
+
+precis(m6, digits = 3, corr = T)
+
+# plotting the impact of changes in Verbal IQ on predictions
+# prepare new counterfactual data - non-verbal vs verbal IQ
+N.avg = mean(d2$NonVerbalIQ)
+S.avg = mean(d2$SocialIQ)
+V.seq = seq(from=8, to= 33, length.out = 30)
+pred.data = data.frame(
+  VerbalIQ = V.seq,
+  NonVerbalIQ = N.avg,
+  SocialIQ = S.avg
+)
+
+#compute counterfactual mean  (mu)
+mu = link(m6, data = pred.data)
+mu.mean = apply(mu, 2, mean)
+mu.PI = apply(mu, 2, PI)
+
+#simulate counterfactual outcomes
+V.sim = sim(m6, data = pred.data, n=1e4)
+V.PI = apply(V.sim, 2, PI)
+
+#display predictions, hiding raw data with type="n"
+plot(ADOS ~ VerbalIQ, data=d2, type="n")
+mtext("NonVerbalIQ + Social = 0")
+lines(V.seq, mu.mean)
+shade(mu.PI, V.seq)
+shade(V.PI, V.seq)
+
+# plotting the impact of changes in NonVerbal IQ on predictions
+# prepare new counterfactual data 
+V.avg = mean(d2$VerbalIQ)
+S.avg = mean(d2$SocialIQ)
+N.seq = seq(from=13, to= 42, length.out = 30)
+pred.data = data.frame(
+  NonVerbalIQ = N.seq,
+  VerbalIQ = V.avg,
+  SocialIQ = S.avg
+)
+
+#compute counterfactual mean divorce (mu)
+mu = link(m6, data = pred.data)
+mu.mean = apply(mu, 2, mean)
+mu.PI = apply(mu, 2, PI)
+
+#simulate counterfactual divorce outcomes
+N.sim = sim(m6, data = pred.data, n=1e4)
+N.PI = apply(N.sim, 2, PI)
+
+#display predictions, hiding raw data with type="n"
+plot(ADOS ~ NonVerbalIQ, data=d2, type="n")
+mtext("SocialIQ + VerbalIQ = 0")
+lines(N.seq, mu.mean)
+shade(mu.PI, N.seq)
+shade(N.PI, N.seq)
+
+# plotting the impact of changes in Social IQ on predictions
+# prepare new counterfactual data 
+V.avg = mean(d2$VerbalIQ)
+N.avg = mean(d2$NonVerbalIQ)
+S.seq = seq(from=61, to= 115, length.out = 30)
+pred.data = data.frame(
+  SocialIQ = S.seq,
+  VerbalIQ = V.avg,
+  NonVerbalIQ = N.avg
+)
+
+#compute counterfactual mean divorce (mu)
+mu = link(m6, data = pred.data)
+mu.mean = apply(mu, 2, mean)
+mu.PI = apply(mu, 2, PI)
+
+#simulate counterfactual divorce outcomes
+S.sim = sim(m6, data = pred.data, n=1e4)
+S.PI = apply(S.sim, 2, PI)
+
+#display predictions, hiding raw data with type="n"
+plot(ADOS ~ SocialIQ, data=d2, type="n")
+mtext("NonVerbalIQ + VerbalIQ = 0")
+lines(S.seq, mu.mean)
+shade(mu.PI, S.seq)
+shade(S.PI, S.seq)
+
+#dens plot simulated data from model on raw data
+
+sim.m6 = sim(m6, data = d2, n=1e4)
+dens(sim.m6, col = "red", xlim = c(-15, 35), ylim = c(0,0.12),  xlab = "ADOS")
+par(new=TRUE)
+dens(d2$ADOS, xlim = c(-15, 35), ylim = c(0,0.12), xlab = "ADOS")
+title("Model 6")
+
 
 ```
 
@@ -251,11 +365,51 @@ shade(S.PI, S.seq)
 4.1. You have three scores for IQ, do they show shared variance? Is that the same in TD and ASD? What does that tell us about IQ?
 4.2. You have explored the relation between IQ and ADOS. How do you explain that relation from a cognitive perspective? N.B. You can present alternative hypotheses.
 ```{r}
+# correlation for ASD children
+cor(d1$NonVerbalIQ, d1$SocialIQ)
+cor(d1$SocialIQ, d1$VerbalIQ)
+cor(d1$VerbalIQ, d1$NonVerbalIQ)
 
+#correlation between variable for ASD+TD children
+cor(d2$NonVerbalIQ, d2$SocialIQ)
+cor(d2$SocialIQ, d2$VerbalIQ)
+cor(d2$VerbalIQ, d2$NonVerbalIQ)
+
+d3 = subset(data, c(Visit ==1 & ASD == 0))
+d3=d3[complete.cases(d3),]
+
+# correlation for TD children
+cor(d3$NonVerbalIQ, d3$SocialIQ)
+cor(d3$SocialIQ, d3$VerbalIQ)
+cor(d3$VerbalIQ, d3$NonVerbalIQ)
 ```
 
 5. Bonus questions: Including measurement errors. 
 5.1. Let's assume that ADOS has a measurement error of 1. How would you model that in any of the previous models? 
 5.2. We know that IQ has an estimated measurement error of 2.12. How would you include that? 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
